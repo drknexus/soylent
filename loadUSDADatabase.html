@@ -376,11 +376,13 @@ if (makeJSON) {
 
 <h2>Transform results to wide</h2>
 
-<pre><code class="r">foodWithData &lt;- merge(FOOD_DES, NUT_DATA, by = &quot;NDB_No&quot;)
-longres &lt;- merge(foodWithData, NUTR_DEF, by = &quot;Nutr_No&quot;)
-longres[NutrDesc == &quot;Energy&quot;, `:=`(NutrDesc, Units)]
-USDAwide &lt;- as.data.table(dcast(longres, Long_Desc + NDB_No + Refuse ~ NutrDesc + 
-    Units, value.var = &quot;Nutr_Val&quot;))
+<pre><code class="r">invisible({
+    foodWithData &lt;- merge(FOOD_DES, NUT_DATA, by = &quot;NDB_No&quot;)
+    longres &lt;- merge(foodWithData, NUTR_DEF, by = &quot;Nutr_No&quot;)
+    longres[NutrDesc == &quot;Energy&quot;, `:=`(NutrDesc, Units)]
+    USDAwide &lt;- as.data.table(dcast(longres, Long_Desc + NDB_No + Refuse ~ NutrDesc + 
+        Units, value.var = &quot;Nutr_Val&quot;))
+})
 </code></pre>
 
 <h2>Adding otherwise missing columns</h2>

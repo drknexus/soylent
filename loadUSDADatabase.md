@@ -198,12 +198,15 @@ if (makeJSON) {
 
 ## Transform results to wide
 
+
 ```r
-foodWithData <- merge(FOOD_DES, NUT_DATA, by = "NDB_No")
-longres <- merge(foodWithData, NUTR_DEF, by = "Nutr_No")
-longres[NutrDesc == "Energy", `:=`(NutrDesc, Units)]
-USDAwide <- as.data.table(dcast(longres, Long_Desc + NDB_No + Refuse ~ NutrDesc + 
-    Units, value.var = "Nutr_Val"))
+invisible({
+    foodWithData <- merge(FOOD_DES, NUT_DATA, by = "NDB_No")
+    longres <- merge(foodWithData, NUTR_DEF, by = "Nutr_No")
+    longres[NutrDesc == "Energy", `:=`(NutrDesc, Units)]
+    USDAwide <- as.data.table(dcast(longres, Long_Desc + NDB_No + Refuse ~ NutrDesc + 
+        Units, value.var = "Nutr_Val"))
+})
 ```
 
 
