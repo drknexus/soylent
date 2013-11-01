@@ -4,7 +4,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 
-<title>Soylent_R 1.0: Load USDA Database</title>
+<title>Soylent_R 1.1: Load USDA Database</title>
 
 <style type="text/css">
 body, td {
@@ -178,11 +178,14 @@ hljs.initHighlightingOnLoad();
 </head>
 
 <body>
-<h1>Soylent_R 1.0: Load USDA Database</h1>
+<h1>Soylent_R 1.1: Load USDA Database</h1>
 
 <p>This R markdown file runs with the purpose of loading the USDA database, saving each table as USDA.Rda and exporting each table as TableName.json.  Where possible, field names etc are the same as in the USDA data dictionary (contained in the downloadable .zip file).  This is version 1, errors are inevitable, please report them.</p>
 
-<p>Also note that this takes a fair bit of memory (~3.5gb) and failing that may crash miserably.</p>
+<p>Converting these data structures to JSON takes a fair bit of memory (~3.5gb) and failing that may crash miserably.  So, I won&#39;t always rebuild to .json.</p>
+
+<pre><code class="r">makeJSON &lt;- FALSE
+</code></pre>
 
 <h2>To Do</h2>
 
@@ -192,7 +195,7 @@ hljs.initHighlightingOnLoad();
 The database sources are <code>http://www.ars.usda.gov/SP2UserFiles/Place/12354500/Data/SR25/dnload/sr25.zip</code> and <code>http://www.ars.usda.gov/SP2UserFiles/Place/12354500/Data/SR25/dnload/sr25abbr.zip</code> unpacked into the directory <code>./sr25</code>.  Rather than put strain on github or the USDA, it has been left to the compiling user to get them and put them in the right folder.</li>
 </ul>
 
-<p>It will probable be found that ABBREV is suitable for most purposes, but the demands of the soylent project may require the details of the other tables.</p>
+<p>Most data most users may want will probably be found already wide in the ABBREV table.  However, the soylent project may require the details of the other tables.</p>
 
 <h2>Packages and constants</h2>
 
@@ -354,16 +357,49 @@ for (f in seq_along(files)) {
     setnames(get(database.name[f]), names(get(database.name[f])), get(paste0(database.name[f], 
         &quot;.names&quot;)))
 }
-setkey(FOOD_DES, NDB_No)
+setkey(FOOD_DES, NDB_No, FdGrp_Cd)
 setkey(FD_GROUP, FdGrp_Cd)
+setkey(NUT_DATA, NDB_No, Ref_NDB_No, Nutr_No, Src_Cd, Deriv_Cd)
+setkey(NUTR_DEF, Nutr_No)
 </code></pre>
 
 <h2>Save results</h2>
 
-<pre><code class="r">save(list = database.name, file = paste0(location, &quot;USDA.Rda&quot;))
-for (f in seq_along(database.name)) {
-    writeLines(toJSON(get(database.name[f]), pretty = TRUE), con = paste0(location, 
-        database.name[f], &quot;.json&quot;))
+<pre><code class="r">save(database.name, list = database.name, file = paste0(location, &quot;USDA.Rda&quot;))
+if (makeJSON) {
+    for (f in seq_along(database.name)) {
+        writeLines(toJSON(get(database.name[f]), pretty = TRUE), con = paste0(location, 
+            database.name[f], &quot;.json&quot;))
+    }
+}
+</code></pre>
+
+<h2>Transform results to wide</h2>
+
+<pre><code class="r">foodWithData &lt;- merge(FOOD_DES, NUT_DATA, by = &quot;NDB_No&quot;)
+longres &lt;- merge(foodWithData, NUTR_DEF, by = &quot;Nutr_No&quot;)
+longres[NutrDesc == &quot;Energy&quot;, `:=`(NutrDesc, Units)]
+USDAwide &lt;- as.data.table(dcast(longres, Long_Desc + NDB_No + Refuse ~ NutrDesc + 
+    Units, value.var = &quot;Nutr_Val&quot;))
+</code></pre>
+
+<h2>Adding otherwise missing columns</h2>
+
+<pre><code class="r">invisible({
+    #supress console output for data.table
+    USDAwide[, `:=`(Chromium_mcg, NA_real_)]
+    USDAwide[, `:=`(Biotin_mcg, NA_real_)]
+    USDAwide[, `:=`(Iodine_mcg, NA_real_)]
+    USDAwide[, `:=`(Price, NA_real_)]
+})
+</code></pre>
+
+<h2>Changing column names to something that won&#39;t cause text encoding nightmares</h2>
+
+<pre><code class="r">setnames(USDAwide, names(USDAwide), gsub(&quot;µg&quot;, &quot;mcg&quot;, names(USDAwide)))
+save(USDAwide, file = &quot;USDAwide.rda&quot;)
+if (makeJSON) {
+    writeLines(toJSON(USDAwide, pretty = TRUE), con = paste0(location, &quot;USDAwide.json&quot;))
 }
 </code></pre>
 

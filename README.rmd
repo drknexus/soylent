@@ -1,76 +1,64 @@
-# Soylent_R 1.0
+# Soylent_R 1.1
 
 _If you don't know what soylent is, visit [soylent.me](http://soylent.me)_
 
-This is a DIY soylent recipe forked from [zda][https://github.com/zda/soylent], cf. the source [food blog](http://www.cookingfor20.com/2013/06/18/hacker-school-soylent-recipe/) for more details. **Also, see the Safety heading**.
+My exposure to the idea of doing a DIY soylent recipe came from [zda][https://github.com/zda/soylent], cf. the source [food blog](http://www.cookingfor20.com/2013/06/18/hacker-school-soylent-recipe/) for more details. **Also, see the Safety heading**.
 
 Please submit bug reports and if you are interested I welcome co-developers and forks.
 
 ## Purpose
 * Follow through on idea of setting the development of soylent into a computational/programming framework with source control.  This should eliminate the need for a proliferation of forks for specific needs.
-* Allow for flexable/specific needs.
+* Allow for flexible/specific needs.
 ** Gender specific needs, e.g. For example, techbelle has [a fork][https://github.com/techbelle/soylent] that has a 'girlysoylent'.  
 ** Allergy specific needs
-** Regional ingredient/brand availablity
+** Regional ingredient/brand availability
 ** Monetary restrictions
 ** GMO etc restrictions
 ** Prep/time # of ingredient restrictions
 * Make it safe(r); this involves collecting feedback from users and tracking users over time... for now this can be handled through github's issue tracker
 * Create a [`shiny`][http://www.rstudio.com/shiny/] interface to accomplish it all.
-* Create an annotated database that suits the need of this proejct and others.  I'm not familiar with JSON as a database format.  So, at first I will use .csv files to store nutritional data.  I will seek to allow the exporting of this data as JSON via the `rjson` package.  
+* Create an annotated database that suits the need of this project and others.  I'm not familiar with JSON as a database format.  So, at first I will use .csv files to store nutritional data.  I will seek to allow the exporting of this data as JSON via the `rjson` package.  
 
 ## Safety
 
 What I am writing almost certainly is not safe.  The source fork also has disclaimers... but this one is more serious.  I'm breaking the recipe down and doing stuff to it.  At any given point it almost certainly isn't particularly safe.
 
-## Recipe
-### Pre-requsites
-* Have a working version of the USDA database.  The attempt to do this is currently included in 'loadUSDADatabase.Rmd' which produces `USDA.Rda`.
+## Build notes
+### Pre-requites
+* Have a working version of the USDA database.  The attempt to do this is currently included in 'loadUSDADatabase.Rmd' which produces `USDA.Rda` (long format) and `USDAwide.Rda` (wide format).  Zipped JSON entries for each of these will also be made available in ./sr25/ but will be updated infrequently due to the file size.  If building from scratch, the short version is that the database source documents are `http://www.ars.usda.gov/SP2UserFiles/Place/12354500/Data/SR25/dnload/sr25.zip` and `http://www.ars.usda.gov/SP2UserFiles/Place/12354500/Data/SR25/dnload/sr25abbr.zip` unpacked into the directory `./sr25`.
+
 ### R Packages
-* Requited:  [`repsych`][https://github.com/drknexus/repsych]. Not because it is actually required, but because drknexus is accustomed to having that framework available in the background.
+* Required:  [`repsych`][https://github.com/drknexus/repsych]. Not because it is actually required, but because drknexus is accustomed to having that framework available in the background.
 * It requires `shiny` in anticipation in anticipation of making use of shiny as an interface.
 * `data.table` because it handles big data better than data.frames and makes for prettier code
+* `reshape2` helps restructure data from wide to long
+* `doBy` is my preferred way to aggregate
+* `knitr` lets us go from markdown to R scripts than can be run
+* `paralell` is going to allow us to throw multiple cores at the optimization problem
 ```{r loadPackages,results='hide',echo=FALSE}
 library(repsych)
-glibrary(shiny,data.table)
+glibrary(shiny,data.table,reshape2,doBy,knitr,paralell)
+
 ```
-### Ingredients
-
-* 120 g oat flour
-* 85 g soy protein from Trader Joe's, unflavored (see blog post for substitutions)
-* 85 g olive oil
-* 75 g brown sugar
-* 25 g ground flax
-* 20 g cocoa powder
-* 15 g lecithin
-* up to 10 g potassium citrate or 20 g potassium gluconate, added gradually (1 g per batch)
-* 2 g iodized salt
-* 1 g Emergen-C
-* 1 Vitamin D supplement
-
-### Method
-
-0. Combine all dry ingredients except Vitamin D. Mix well.
-0. Measure olive oil into a separate container.
-0. To prepare an individual meal, measure about a third of the dry mix and a third of the oil into a large drinking vessel.
-0. Add 400-500 ml (14-16 oz) of water, and shake or stir well.
-0. Chill for several hours if possible, to improve taste and texture. It may be healthier that way too (due to phytic acid deactivation).
-0. Meanwhile, take your Vitamin D and/or get some sunshine.
-0. Drink.
-
-## Acknowledgements
-* Thanks to Zda for proposing the idea of putting this all in a computational framework and making his source available on github.
-* Thanks to anyone who has beta tested or otherwise given feedback on the original source recipe, including but not limited to [Eddie](http://github.com/Eddie-D) and [Darshan](http://github.com/Shak-eah). And to [Rob](http://github.com/engibeer) for coming up with this entire idea.
+### Load USDA Database in Wide Format
+See loadUSDAdatabase.md for annotated code, loadUSDAdatabase for pre-purled code, and USDAwide.Rda for the database that much of the rest of this rests on.
+```{r}
+purl("loadUSDAdatabase.Rmd")
+source("loadUSDAdatabase.R")
+```
 
 ## Links
-* [Soylent.me](http://soylent.me) (the mothership)
+* [Soylent.me](http://soylent.me) (the mother-ship)
 * [USDA nutrient database](http://ndb.nal.usda.gov/ndb/search/list)
 
 ## License
 
 <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-sa/3.0/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/deed.en_US">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
 
+## Acknowledgements
+* Thanks to Zda for proposing the idea of putting this all in a computational framework and making his source available on github.
+* Thanks to anyone who has beta tested or otherwise given feedback on the original source recipe, including but not limited to [Eddie](http://github.com/Eddie-D) and [Darshan](http://github.com/Shak-eah). And to [Rob](http://github.com/engibeer) for coming up with this entire idea.
+
 ## References
 * [Zda's Original blog post](http://www.cookingfor20.com/2013/06/18/hacker-school-soylent-recipe) with photos and more information
 * U.S. Department of Agriculture, Agricultural Research Service. 2012. USDA National Nutrient Database for Standard Reference, Release 25. Nutrient Data Laboratory Home Page, http://www.ars.usda.gov/ba/bhnrc/ndl
-
