@@ -1,0 +1,87 @@
+Optimizer
+========================================================
+
+This is a total rewrite of the optimizer code.  Each criterion will have a optimal (0) and a min and max.  Crossing 95% min or max should be an order of magnitude effect, i.e. 10.  Crossing min or max is a two order of magnitude effect, i.e. 100.  Within the range we want a relatively smooth function that quickly accelerates (beyond 10% deviance from optimal to 1).  A curve would be awesome, but for now I'll settle for lines.
+```{r optimBasic}
+# F(t) = A(1 - t)^2 + 2B(1 - t)t + Ct^2
+# y = d(1 - t)^2 + 2e(1 - t)t + ft^2
+# 
+# blah <- splinefun(c(-4,-2,0,1,3),c(10,1,0,1,10))
+# plot(seq(-10,10,by=.01),blah(seq(-10,10,by=.01)),type="l")
+# 
+# monotonic <- function(x) {
+#   x[1:(length(x)-1)] <- ifelse(x[1:(length(x)-1)] < x[2:(length(x)-1)],
+# }
+# splineFUN <- function(val, optim, mini, maxi) {
+#   val <- val-optim #is the amount val is in excess of optimum.
+#   mini <- mini-optim
+#   maxi <- maxi-optim
+#   lower <- sin(seq(pi/2,0,length.out=10))
+#   upper <- sin(seq(0,pi/2,length.out=10))
+#   splineFn <- splinefun(c(lower*mini,optim,maxi*upper),c(100,10:2,0,2:10,100))
+#   res <- splineFn(val)
+#   res <- ifelse(res > maxi,100,res)
+#   res <- ifelse(res < mini,100,res)
+#   res[res < 0] <- 0
+#   res[res > 100] <- 100
+#   return(res)
+# }
+rweight <- function(val,optimV,minV,maxV) {
+  dev <- abs(val-optimV)
+  functionalLowerRange <- optimV-minV
+  functionalUpperRange <- maxV-optimV
+  prop <- ifelse(sign(val-optim)==-1, dev/functionalLowerRange, dev/functionalUpperRange)
+  res <- ifelse((prop > .90) & (prop < 1),abs(prop-1)*999+1,prop)
+  res <- ifelse((val < minV) |(val > maxV),999+((1+(dev/optim))^2),res)
+  return(res)
+}
+
+```
+
+## Load USDA
+```{r}
+library(repsych)
+glibrary(data.table,doBy,reshape2,knitr,parallel)
+
+purl("Nutrient Research.Rmd")
+source("Nutrient Research.R")
+load("./sr25/USDA.Rda")
+mgrepl <- function(pattern,x) {
+  apply(sapply(pattern,grepl,x=x),1,any)
+}
+foodWithData <- merge(targetFood,NUT_DATA,by="NDB_No")
+longres <- merge(foodWithData,NUTR_DEF,by="Nutr_No")
+longres[NutrDesc=="Energy",NutrDesc:=Units]
+USDAwide <- as.data.table(dcast(longres,Long_Desc+NDB_No+Refuse~NutrDesc+Units,value.var="Nutr_Val"))
+
+
+
+#USDA database doesn't track cost
+
+#USDAwide <- merge(USDAwide,WEIGHT,by="NDB_No")
+#dput(USDAwide[1,])
+#USDAwide[Long_Desc=="Butter, salted",]
+#template <- lapply(USDAwide[1,],unfactor)
+#dput(template,file="clipboard")
+
+#
+setnames(USDAwide,names(USDAwide),gsub("µg","mcg",names(USDAwide)))
+#USDA database lacks this information
+USDAwide[,Price:=NA_real_]
+USDAwide[,Chromium_mcg:=NA_real_]
+USDAwide[,Biotin_mcg:=NA_real_]
+USDAwide[,Iodine_mcg:=NA_real_]
+
+purl("Nutrient Research.Rmd")
+purl("MyFoods.Rmd")
+source("Nutrient Research.r")
+source("MyFoods.r")
+
+
+
+#define ease of use functions
+findNutrientName <- function(x) {names(blank.food)[grepl(x,tolower(names(blank.food)))]}
+findFoodName <- function(x) {
+  USDAwide[grepl(tolower(x),tolower(Long_Desc)),]
+}
+```

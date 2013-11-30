@@ -43,7 +43,7 @@ glibrary(shiny,data.table,reshape2,doBy,knitr,paralell)
 ### Load USDA Database in Wide Format
 See loadUSDAdatabase.md for annotated code, loadUSDAdatabase for pre-purled code, and USDAwide.Rda for the database that much of the rest of this rests on.
 ```{r}
-purl("loadUSDAdatabase.Rmd")
+purl("loadUSDAdatabase.Rmd",quiet=TRUE)
 source("loadUSDAdatabase.R")
 ```
 
